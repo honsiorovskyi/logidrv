@@ -1,5 +1,4 @@
-MIT License
-
+/*
 Copyright (c) 2022 logidrv developers
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -19,3 +18,16 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+*/
+
+#ifndef logitech_h
+#define logitech_h
+
+#define BTN_MIDDLE 0xaf
+#define BTN_SIDE_1 0xb0
+#define BTN_SIDE_2 0xae
+#define BTN_RESET 0x00
+
+void logitechHandler(IOHIDValueRef value);
+
+#endif
