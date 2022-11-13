@@ -20,6 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+#include <Carbon/Carbon.h>
 #include <IOKit/hid/IOHIDValue.h>
 #include <IOKit/hid/IOHIDManager.h>
 #include "logitech.h"
@@ -30,7 +31,7 @@ void hidCallback(void* context,  IOReturn result,  void* sender,  IOHIDValueRef 
 	uint32_t usagePage = IOHIDElementGetUsagePage(IOHIDValueGetElement(value));
 	switch (usagePage) {
 		case UP_LOGITECH_MOUSE:
-			logitechHandler(value);
+			logitechHIDHandler(value);
 			return;
 	}
 }
@@ -83,7 +84,7 @@ CFArrayRef createMatchings() {
 	return CFArrayCreate(kCFAllocatorDefault, (const void **)matchesList, matchesLen, NULL);
 }
 
-int main(void) {
+void setupHIDHandler() {
 	IOHIDManagerRef hidManager = IOHIDManagerCreate(kCFAllocatorDefault, kIOHIDOptionsTypeNone);
 
 	// IOHIDManagerSetDeviceMatching(hidManager, NULL); // catch all
@@ -91,6 +92,51 @@ int main(void) {
 	IOHIDManagerRegisterInputValueCallback(hidManager, hidCallback, NULL);
 	IOHIDManagerScheduleWithRunLoop(hidManager, CFRunLoopGetMain(), kCFRunLoopDefaultMode);
 	IOHIDManagerOpen(hidManager, kIOHIDOptionsTypeNone);
+}
+
+CGEventRef eventTapCallback (CGEventTapProxy proxy, CGEventType type, CGEventRef event, void *refcon) {
+    switch (type) {
+    	case kCGEventLeftMouseUp:
+        case kCGEventLeftMouseDown:
+			return logitechEventTapHandler(type, event);
+    }
+    
+    return event;
+}
+
+void setupCGEventTap() {
+    // CGEventMask eventMask = kCGEventMaskForAllEvents;
+	CGEventMask eventMask = (
+		CGEventMaskBit(kCGEventLeftMouseUp) |
+		CGEventMaskBit(kCGEventLeftMouseDown)
+	);
+
+	CFMachPortRef eventTap = CGEventTapCreate(
+		kCGHIDEventTap,
+ 		kCGHeadInsertEventTap,
+ 		kCGEventTapOptionDefault,
+ 		eventMask,
+ 		&eventTapCallback,
+ 		NULL
+ 	);
+    
+    if (!eventTap) {
+        fprintf(stderr, "failed to create event tap\n");
+        exit(1);
+    }
+    
+    CFRunLoopSourceRef runLoopSourceRef = CFMachPortCreateRunLoopSource(NULL, eventTap, 0);
+    CFRelease(eventTap);
+    
+    CFRunLoopAddSource(CFRunLoopGetCurrent(), runLoopSourceRef, kCFRunLoopDefaultMode);
+    CFRelease(runLoopSourceRef);
+    
+    CGEventTapEnable(eventTap, true);
+}
+
+int main(void) {
+	setupHIDHandler();
+	setupCGEventTap();
 
 	CFRunLoopRun();
 }

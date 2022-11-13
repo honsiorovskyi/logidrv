@@ -28,6 +28,7 @@ SOFTWARE.
 #define BTN_SIDE_2 0xae
 #define BTN_RESET 0x00
 
-void logitechHandler(IOHIDValueRef value);
+void logitechHIDHandler(IOHIDValueRef value);
+CGEventRef logitechEventTapHandler (CGEventType type, CGEventRef event);
 
 #endif

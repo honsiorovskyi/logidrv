@@ -90,7 +90,7 @@ void releaseButton(long deviceButton)
     // printf("up:   %u\n", cgButton);
 }
 
-void logitechHandler(IOHIDValueRef value) {
+void logitechHIDHandler(IOHIDValueRef value) {
 	int len = IOHIDValueGetLength(value);
 	long intValue = IOHIDValueGetIntegerValue(value);
 
@@ -102,4 +102,27 @@ void logitechHandler(IOHIDValueRef value) {
 
     releaseButton(lastPressedButton);
     pressButton(intValue);
+}
+
+CGEventRef logitechEventTapHandler (CGEventType type, CGEventRef event) {
+    switch (type) {
+        case kCGEventLeftMouseUp:
+        case kCGEventLeftMouseDown:
+            // For some reason (why, Logitech & Apple, why???)
+            // every second click of the middle button
+            // an extra left click event is generated.
+            //
+            // This code is here to suppress it:
+            // if one of the extra keys is currently pressed,
+            // ignore all parasitic left clicks.
+            //
+            // P.S. Hope no race conditions will happen here :pray:
+            if (lastPressedButton != 0) {
+                // printf driven development:
+                // printf("supperssing parasitic left-click!\n");
+                return NULL;
+            }
+    }
+
+    return event;
 }
